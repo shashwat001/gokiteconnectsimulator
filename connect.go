@@ -1,4 +1,4 @@
-package kiteconnect
+package kiteconnectsimulator
 
 import (
 	"fmt"
@@ -156,6 +156,9 @@ func New(apiKey string) *Client {
 	client.SetHTTPClient(&http.Client{
 		Timeout: requestTimeout,
 	})
+
+	connect_db()
+	create_tables()
 
 	return client
 }

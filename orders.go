@@ -1,9 +1,12 @@
-package kiteconnect
+package kiteconnectsimulator
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/google/go-querystring/query"
 	"github.com/zerodha/gokiteconnect/v4/models"
@@ -133,16 +136,36 @@ func (c *Client) GetOrderTrades(OrderID string) ([]Trade, error) {
 func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderResponse, error) {
 	var (
 		orderResponse OrderResponse
-		params        url.Values
 		err           error
 	)
 
-	if params, err = query.Values(orderParams); err != nil {
+	if _, err = query.Values(orderParams); err != nil {
 		return orderResponse, NewError(InputError, fmt.Sprintf("Error decoding order params: %v", err), nil)
 	}
 
-	err = c.doEnvelope(http.MethodPost, fmt.Sprintf(URIPlaceOrder, variety), params, nil, &orderResponse)
-	return orderResponse, err
+	instrument := fmt.Sprintf("%s:%s", orderParams.Exchange, orderParams.Tradingsymbol)
+	quoteLTP, err := c.GetLTP(instrument)
+	if err != nil {
+		log.Fatal("Error in getting quote for instrument", err)
+	}
+
+	fmt.Println(quoteLTP)
+
+	order := &DbOrder{Order: Order{
+		Exchange:      orderParams.Exchange,
+		TradingSymbol: orderParams.Tradingsymbol,
+		Quantity:      float64(orderParams.Quantity),
+		Price:         quoteLTP[instrument].LastPrice,
+	}}
+
+	_, err = db.NewInsert().Model(order).Returning("id").Exec(context.Background())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// err = c.doEnvelope(http.MethodPost, fmt.Sprintf(URIPlaceOrder, variety), params, nil, &orderResponse)
+	return OrderResponse{strconv.FormatInt(order.ID, 10)}, err
 }
 
 // ModifyOrder modifies an order.

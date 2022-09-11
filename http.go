@@ -1,4 +1,4 @@
-package kiteconnect
+package kiteconnectsimulator
 
 /*
 	HTTP helper functions with methods for parsing Kite style JSON envelopes.

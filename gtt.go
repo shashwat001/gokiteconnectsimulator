@@ -1,4 +1,4 @@
-package kiteconnect
+package kiteconnectsimulator
 
 import (
 	"encoding/json"
