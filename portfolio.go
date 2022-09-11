@@ -1,12 +1,12 @@
 package kiteconnectsimulator
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/google/go-querystring/query"
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
 const (
@@ -27,16 +27,15 @@ type Holding struct {
 	ISIN            string `json:"isin"`
 	Product         string `json:"product"`
 
-	Price              float64     `json:"price"`
-	UsedQuantity       int         `json:"used_quantity"`
-	Quantity           int         `json:"quantity"`
-	T1Quantity         int         `json:"t1_quantity"`
-	RealisedQuantity   int         `json:"realised_quantity"`
-	AuthorisedQuantity int         `json:"authorised_quantity"`
-	AuthorisedDate     models.Time `json:"authorised_date"`
-	OpeningQuantity    int         `json:"opening_quantity"`
-	CollateralQuantity int         `json:"collateral_quantity"`
-	CollateralType     string      `json:"collateral_type"`
+	Price              float64 `json:"price"`
+	UsedQuantity       int     `json:"used_quantity"`
+	Quantity           int     `json:"quantity"`
+	T1Quantity         int     `json:"t1_quantity"`
+	RealisedQuantity   int     `json:"realised_quantity"`
+	AuthorisedQuantity int     `json:"authorised_quantity"`
+	OpeningQuantity    int     `json:"opening_quantity"`
+	CollateralQuantity int     `json:"collateral_quantity"`
+	CollateralType     string  `json:"collateral_type"`
 
 	Discrepancy         bool    `json:"discrepancy"`
 	AveragePrice        float64 `json:"average_price"`
@@ -108,9 +107,18 @@ type ConvertPositionParams struct {
 
 // GetHoldings gets a list of holdings.
 func (c *Client) GetHoldings() (Holdings, error) {
-	var holdings Holdings
-	err := c.doEnvelope(http.MethodGet, URIGetHoldings, nil, nil, &holdings)
-	return holdings, err
+	var holdings []DbHolding
+	var returnHolding Holdings
+	err := db.NewSelect().Model(&holdings).Scan(context.Background())
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, holding := range holdings {
+		returnHolding = append(returnHolding, holding.Holding)
+	}
+	return returnHolding, err
 }
 
 // GetPositions gets user positions.

@@ -2,6 +2,7 @@ package kiteconnectsimulator
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/google/go-querystring/query"
+	"github.com/uptrace/bun"
 	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
@@ -17,17 +19,14 @@ type Order struct {
 	AccountID string `json:"account_id"`
 	PlacedBy  string `json:"placed_by"`
 
-	OrderID                 string                 `json:"order_id"`
-	ExchangeOrderID         string                 `json:"exchange_order_id"`
-	ParentOrderID           string                 `json:"parent_order_id"`
-	Status                  string                 `json:"status"`
-	StatusMessage           string                 `json:"status_message"`
-	StatusMessageRaw        string                 `json:"status_message_raw"`
-	OrderTimestamp          models.Time            `json:"order_timestamp"`
-	ExchangeUpdateTimestamp models.Time            `json:"exchange_update_timestamp"`
-	ExchangeTimestamp       models.Time            `json:"exchange_timestamp"`
-	Variety                 string                 `json:"variety"`
-	Meta                    map[string]interface{} `json:"meta"`
+	OrderID          string                 `json:"order_id"`
+	ExchangeOrderID  string                 `json:"exchange_order_id"`
+	ParentOrderID    string                 `json:"parent_order_id"`
+	Status           string                 `json:"status"`
+	StatusMessage    string                 `json:"status_message"`
+	StatusMessageRaw string                 `json:"status_message_raw"`
+	Variety          string                 `json:"variety"`
+	Meta             map[string]interface{} `json:"meta"`
 
 	Exchange        string `json:"exchange"`
 	TradingSymbol   string `json:"tradingsymbol"`
@@ -149,22 +148,25 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		log.Fatal("Error in getting quote for instrument", err)
 	}
 
-	fmt.Println(quoteLTP)
-
 	order := &DbOrder{Order: Order{
-		Exchange:      orderParams.Exchange,
-		TradingSymbol: orderParams.Tradingsymbol,
-		Quantity:      float64(orderParams.Quantity),
-		Price:         quoteLTP[instrument].LastPrice,
+		Exchange:        orderParams.Exchange,
+		TradingSymbol:   orderParams.Tradingsymbol,
+		Quantity:        float64(orderParams.Quantity),
+		Price:           quoteLTP[instrument].LastPrice,
+		InstrumentToken: uint32(quoteLTP[instrument].InstrumentToken),
+		TransactionType: orderParams.TransactionType,
 	}}
 
-	_, err = db.NewInsert().Model(order).Returning("id").Exec(context.Background())
+	err = db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		_, err = tx.NewInsert().Model(order).Returning("id").Exec(ctx)
+		update_holding(tx, order)
+		return err
+	})
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	// err = c.doEnvelope(http.MethodPost, fmt.Sprintf(URIPlaceOrder, variety), params, nil, &orderResponse)
 	return OrderResponse{strconv.FormatInt(order.ID, 10)}, err
 }
 
