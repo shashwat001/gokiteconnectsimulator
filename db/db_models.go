@@ -1,7 +1,7 @@
 package db
 
 import (
-	"main/kiteconnectsimulator/models"
+	"kiteconnectsimulator/models"
 	"time"
 )
 

@@ -3,10 +3,10 @@ package ordermatcher
 import (
 	"container/heap"
 	"fmt"
+	"kiteconnectsimulator/db"
+	"kiteconnectsimulator/models"
+	kiteticker "kiteconnectsimulator/ticker"
 	"log"
-	"main/kiteconnectsimulator/db"
-	"main/kiteconnectsimulator/models"
-	kiteticker "main/kiteconnectsimulator/ticker"
 )
 
 var (

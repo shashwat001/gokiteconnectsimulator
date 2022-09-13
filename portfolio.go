@@ -3,8 +3,8 @@ package kiteconnectsimulator
 import (
 	"context"
 	"fmt"
-	"main/kiteconnectsimulator/db"
-	"main/kiteconnectsimulator/models"
+	"kiteconnectsimulator/db"
+	"kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
 

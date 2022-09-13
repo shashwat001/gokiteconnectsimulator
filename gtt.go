@@ -3,7 +3,7 @@ package kiteconnectsimulator
 import (
 	"encoding/json"
 	"fmt"
-	"main/kiteconnectsimulator/models"
+	"kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
 )

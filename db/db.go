@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"kiteconnectsimulator/models"
 	"log"
-	"main/kiteconnectsimulator/models"
 
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"

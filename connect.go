@@ -2,9 +2,9 @@ package kiteconnectsimulator
 
 import (
 	"fmt"
-	"main/kiteconnectsimulator/db"
-	"main/kiteconnectsimulator/ordermatcher"
-	kiteticker "main/kiteconnectsimulator/ticker"
+	"kiteconnectsimulator/db"
+	"kiteconnectsimulator/ordermatcher"
+	kiteticker "kiteconnectsimulator/ticker"
 	"net/http"
 	"net/url"
 	"time"

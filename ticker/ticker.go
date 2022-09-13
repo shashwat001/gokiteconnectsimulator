@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"main/kiteconnectsimulator/models"
+	"kiteconnectsimulator/models"
 	"math"
 	"net/url"
 	"sync"

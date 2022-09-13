@@ -2,8 +2,8 @@ package ordermatcher
 
 import (
 	"fmt"
-	"main/kiteconnectsimulator/models"
-	kiteticker "main/kiteconnectsimulator/ticker"
+	"kiteconnectsimulator/models"
+	kiteticker "kiteconnectsimulator/ticker"
 	"os"
 	"strconv"
 	"time"

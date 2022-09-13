@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"main/kiteconnectsimulator/db"
-	"main/kiteconnectsimulator/models"
+	"kiteconnectsimulator/db"
+	"kiteconnectsimulator/models"
 
 	"github.com/google/go-querystring/query"
 )
