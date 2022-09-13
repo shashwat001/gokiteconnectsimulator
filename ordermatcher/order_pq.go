@@ -6,6 +6,7 @@ import (
 )
 
 type order struct {
+	orderid  string
 	quantity int64
 	price    float64
 }

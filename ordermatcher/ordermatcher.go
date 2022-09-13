@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	orderQueues           map[string]*PriorityQueue
+	buyOrderQueues        map[uint32]*PriorityQueue
+	sellOrderQueues       map[uint32]*PriorityQueue
 	subscribedInstruments map[uint32]bool
 )
 
@@ -17,7 +18,8 @@ type OrderMatcher struct {
 }
 
 func (om *OrderMatcher) Start() {
-	orderQueues = make(map[string]*PriorityQueue)
+	buyOrderQueues = make(map[uint32]*PriorityQueue)
+	sellOrderQueues = make(map[uint32]*PriorityQueue)
 	subscribedInstruments = make(map[uint32]bool)
 
 	log.Println("Starting listening to ticker")
@@ -25,47 +27,49 @@ func (om *OrderMatcher) Start() {
 
 }
 
-func (om *OrderMatcher) AddBuy(instrument string, instrumentToken uint32, qty int64, amount float64) {
-	log.Println("Adding buy order to limit queue for instrument: ", instrument)
+func (om *OrderMatcher) AddBuy(orderid string, instrumentToken uint32, qty int64, amount float64) {
+	log.Println("Adding buy order to limit queue for instrument: ", instrumentToken)
 	ord := &order{
+		orderid:  orderid,
 		quantity: qty,
 		price:    amount,
 	}
 
-	if queue, ok := orderQueues[instrument+":BUY"]; ok {
+	if queue, ok := buyOrderQueues[instrumentToken]; ok {
 		heap.Push(queue, ord)
 		fmt.Println(queue.Len())
 	} else {
 		queue := &PriorityQueue{}
 		heap.Push(queue, ord)
-		orderQueues[instrument+":BUY"] = queue
+		buyOrderQueues[instrumentToken] = queue
 	}
 
 	if _, ok := subscribedInstruments[instrumentToken]; !ok {
-		log.Println("Subscribing to ticker for instrument: ", instrument)
+		log.Println("Subscribing to ticker for instrument: ", instrumentToken)
 		subscribedInstruments[instrumentToken] = true
 		om.Ticker.Subscribe([]uint32{instrumentToken})
 	}
 }
 
-func (om *OrderMatcher) AddSell(instrument string, instrumentToken uint32, qty int64, amount float64) {
-	log.Println("Adding sell order to limit queue for instrument: ", instrument)
+func (om *OrderMatcher) AddSell(orderid string, instrumentToken uint32, qty int64, amount float64) {
+	log.Println("Adding sell order to limit queue for instrument: ", instrumentToken)
 	ord := &order{
 		quantity: qty,
 		price:    amount,
 	}
 
-	if queue, ok := orderQueues[instrument+":SELL"]; ok {
+	if queue, ok := sellOrderQueues[instrumentToken]; ok {
 		heap.Push(queue, ord)
 		fmt.Println(queue.Len())
 	} else {
 		queue := &PriorityQueue{}
 		heap.Push(queue, ord)
-		orderQueues[instrument+":SELL"] = queue
+		sellOrderQueues[instrumentToken] = queue
 	}
-}
 
-func (om *OrderMatcher) listAll(instrument string) {
-	queue := orderQueues[instrument]
-	queue.List()
+	if _, ok := subscribedInstruments[instrumentToken]; !ok {
+		log.Println("Subscribing to ticker for instrument: ", instrumentToken)
+		subscribedInstruments[instrumentToken] = true
+		om.Ticker.Subscribe([]uint32{instrumentToken})
+	}
 }
