@@ -8,49 +8,13 @@ import (
 	"net/url"
 	"strconv"
 
+	"main/kiteconnectsimulator/models"
+
 	"github.com/google/go-querystring/query"
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
-// Order represents a individual order response.
-type Order struct {
-	AccountID string `json:"account_id"`
-	PlacedBy  string `json:"placed_by"`
-
-	OrderID          string                 `json:"order_id"`
-	ExchangeOrderID  string                 `json:"exchange_order_id"`
-	ParentOrderID    string                 `json:"parent_order_id"`
-	Status           string                 `json:"status"`
-	StatusMessage    string                 `json:"status_message"`
-	StatusMessageRaw string                 `json:"status_message_raw"`
-	Variety          string                 `json:"variety"`
-	Meta             map[string]interface{} `json:"meta"`
-
-	Exchange        string `json:"exchange"`
-	TradingSymbol   string `json:"tradingsymbol"`
-	InstrumentToken uint32 `json:"instrument_token"`
-
-	OrderType         string  `json:"order_type"`
-	TransactionType   string  `json:"transaction_type"`
-	Validity          string  `json:"validity"`
-	ValidityTTL       int     `json:"validity_ttl"`
-	Product           string  `json:"product"`
-	Quantity          float64 `json:"quantity"`
-	DisclosedQuantity float64 `json:"disclosed_quantity"`
-	Price             float64 `json:"price"`
-	TriggerPrice      float64 `json:"trigger_price"`
-
-	AveragePrice      float64 `json:"average_price"`
-	FilledQuantity    float64 `json:"filled_quantity"`
-	PendingQuantity   float64 `json:"pending_quantity"`
-	CancelledQuantity float64 `json:"cancelled_quantity"`
-
-	Tag  string   `json:"tag"`
-	Tags []string `json:"tags"`
-}
-
 // Orders is a list of orders.
-type Orders []Order
+type Orders []models.Order
 
 // OrderParams represents parameters for placing an order.
 type OrderParams struct {
@@ -116,8 +80,8 @@ func (c *Client) GetTrades() (Trades, error) {
 }
 
 // GetOrderHistory gets history of an individual order.
-func (c *Client) GetOrderHistory(OrderID string) ([]Order, error) {
-	var orderHistory []Order
+func (c *Client) GetOrderHistory(OrderID string) ([]models.Order, error) {
+	var orderHistory []models.Order
 	err := c.doEnvelope(http.MethodGet, fmt.Sprintf(URIGetOrderHistory, OrderID), nil, nil, &orderHistory)
 	return orderHistory, err
 }
@@ -147,7 +111,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		log.Fatal("Error in getting quote for instrument: ", err)
 	}
 
-	order := &DbOrder{Order: Order{
+	order := &DbOrder{Order: models.Order{
 		Exchange:        orderParams.Exchange,
 		TradingSymbol:   orderParams.Tradingsymbol,
 		Quantity:        float64(orderParams.Quantity),

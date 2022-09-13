@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"main/kiteconnectsimulator/models"
 
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
@@ -85,7 +86,7 @@ func complete_order_and_update_holding(orderPK int64) {
 
 		if count == 0 {
 
-			holding := &DbHolding{Holding: Holding{
+			holding := &DbHolding{Holding: models.Holding{
 				Tradingsymbol:   order.TradingSymbol,
 				Exchange:        order.Exchange,
 				InstrumentToken: order.InstrumentToken,

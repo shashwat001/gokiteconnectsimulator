@@ -3,10 +3,9 @@ package kiteconnectsimulator
 import (
 	"encoding/json"
 	"fmt"
+	"main/kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
-
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
 // GTTType represents the available GTT order types.
@@ -39,16 +38,16 @@ type GTTCondition struct {
 
 // GTT represents a single GTT order.
 type GTT struct {
-	ID        int          `json:"id"`
-	UserID    string       `json:"user_id"`
-	Type      GTTType      `json:"type" url:""`
-	CreatedAt models.Time  `json:"created_at"`
-	UpdatedAt models.Time  `json:"updated_at"`
-	ExpiresAt models.Time  `json:"expires_at"`
-	Status    string       `json:"status"`
-	Condition GTTCondition `json:"condition"`
-	Orders    []Order      `json:"orders"`
-	Meta      GTTMeta      `json:"meta"`
+	ID        int            `json:"id"`
+	UserID    string         `json:"user_id"`
+	Type      GTTType        `json:"type" url:""`
+	CreatedAt models.Time    `json:"created_at"`
+	UpdatedAt models.Time    `json:"updated_at"`
+	ExpiresAt models.Time    `json:"expires_at"`
+	Status    string         `json:"status"`
+	Condition GTTCondition   `json:"condition"`
+	Orders    []models.Order `json:"orders"`
+	Meta      GTTMeta        `json:"meta"`
 }
 
 // Trigger is an abstraction over multiple GTT types.
@@ -116,7 +115,7 @@ func newGTT(o GTTParams) GTT {
 	var orders Orders
 
 	for i := range o.Trigger.TriggerValues() {
-		orders = append(orders, Order{
+		orders = append(orders, models.Order{
 			Exchange:        o.Exchange,
 			TradingSymbol:   o.Tradingsymbol,
 			TransactionType: o.TransactionType,

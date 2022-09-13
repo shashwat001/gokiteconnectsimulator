@@ -3,6 +3,7 @@ package kiteconnectsimulator
 import (
 	"context"
 	"fmt"
+	"main/kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
 
@@ -19,35 +20,8 @@ const (
 	HolAuthTransferTypeGift      = "gift"
 )
 
-// Holding is an individual holdings response.
-type Holding struct {
-	Tradingsymbol   string `json:"tradingsymbol"`
-	Exchange        string `json:"exchange"`
-	InstrumentToken uint32 `json:"instrument_token"`
-	ISIN            string `json:"isin"`
-	Product         string `json:"product"`
-
-	Price              float64 `json:"price"`
-	UsedQuantity       int     `json:"used_quantity"`
-	Quantity           int     `json:"quantity"`
-	T1Quantity         int     `json:"t1_quantity"`
-	RealisedQuantity   int     `json:"realised_quantity"`
-	AuthorisedQuantity int     `json:"authorised_quantity"`
-	OpeningQuantity    int     `json:"opening_quantity"`
-	CollateralQuantity int     `json:"collateral_quantity"`
-	CollateralType     string  `json:"collateral_type"`
-
-	Discrepancy         bool    `json:"discrepancy"`
-	AveragePrice        float64 `json:"average_price"`
-	LastPrice           float64 `json:"last_price"`
-	ClosePrice          float64 `json:"close_price"`
-	PnL                 float64 `json:"pnl"`
-	DayChange           float64 `json:"day_change"`
-	DayChangePercentage float64 `json:"day_change_percentage"`
-}
-
 // Holdings is a list of holdings
-type Holdings []Holding
+type Holdings []models.Holding
 
 // Position represents an individual position response.
 type Position struct {
