@@ -133,6 +133,7 @@ func (c *Client) GetOrderTrades(OrderID string) ([]Trade, error) {
 
 // PlaceOrder places an order.
 func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderResponse, error) {
+	log.Println("Adding order")
 	var (
 		orderResponse OrderResponse
 		err           error
@@ -145,7 +146,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 	instrument := fmt.Sprintf("%s:%s", orderParams.Exchange, orderParams.Tradingsymbol)
 	quoteLTP, err := c.GetLTP(instrument)
 	if err != nil {
-		log.Fatal("Error in getting quote for instrument", err)
+		log.Fatal("Error in getting quote for instrument: ", err)
 	}
 
 	order := &DbOrder{Order: Order{
@@ -155,11 +156,28 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		Price:           quoteLTP[instrument].LastPrice,
 		InstrumentToken: uint32(quoteLTP[instrument].InstrumentToken),
 		TransactionType: orderParams.TransactionType,
+		OrderType:       orderParams.OrderType,
 	}}
+
+	if orderParams.OrderType == OrderTypeLimit {
+		order.Status = OrderStatusOpen
+	} else {
+		order.Status = OrderStatusComplete
+	}
 
 	err = db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		_, err = tx.NewInsert().Model(order).Returning("id").Exec(ctx)
 		update_holding(tx, order)
+
+		if order.OrderType == OrderTypeLimit {
+			if order.TransactionType == TransactionTypeBuy {
+				c.Om.AddBuy(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+			} else if order.TransactionType == TransactionTypeSell {
+				c.Om.AddSell(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+			} else {
+				panic("Unknown transactiontype")
+			}
+		}
 		return err
 	})
 

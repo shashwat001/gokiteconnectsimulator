@@ -2,6 +2,8 @@ package kiteconnectsimulator
 
 import (
 	"fmt"
+	"main/kiteconnectsimulator/ordermatcher"
+	kiteticker "main/kiteconnectsimulator/ticker"
 	"net/http"
 	"net/url"
 	"time"
@@ -21,6 +23,7 @@ type Client struct {
 	debug       bool
 	baseURI     string
 	httpClient  HTTPClient
+	Om          *ordermatcher.OrderMatcher
 }
 
 const (
@@ -83,6 +86,7 @@ const (
 	MarginsCommodity = "commodity"
 
 	// Order status
+	OrderStatusOpen      = "OPEN"
 	OrderStatusComplete  = "COMPLETE"
 	OrderStatusRejected  = "REJECTED"
 	OrderStatusCancelled = "CANCELLED"
@@ -150,6 +154,9 @@ func New(apiKey string) *Client {
 	client := &Client{
 		apiKey:  apiKey,
 		baseURI: baseURI,
+		Om: &ordermatcher.OrderMatcher{
+			Ticker: kiteticker.New(apiKey),
+		},
 	}
 
 	// Create a default http handler with default timeout.
@@ -189,6 +196,7 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 // SetAccessToken sets the access token to the Kite Connect instance.
 func (c *Client) SetAccessToken(accessToken string) {
 	c.accessToken = accessToken
+	c.Om.Ticker.SetAccessToken(accessToken)
 }
 
 // GetLoginURL gets Kite Connect login endpoint.

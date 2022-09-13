@@ -1,10 +1,7 @@
 package kiteconnectsimulator
 
 import (
-	"context"
 	"time"
-
-	"github.com/uptrace/bun"
 )
 
 type DbOrder struct {
@@ -19,11 +16,11 @@ type DbHolding struct {
 	CreatedAt time.Time `bun:",nullzero,default:now()"`
 }
 
-func (*DbHolding) AfterCreateTable(query *bun.CreateTableQuery) error {
-	_, err := query.DB().NewCreateIndex().
-		Model((*DbHolding)(nil)).
-		Index("category_id_idx").
-		Column("category_id").
-		Exec(context.Background())
-	return err
-}
+// func (*DbHolding) AfterCreateTable(query *bun.CreateTableQuery) error {
+// 	_, err := query.DB().NewCreateIndex().
+// 		Model((*DbHolding)(nil)).
+// 		Index("category_id_idx").
+// 		Column("category_id").
+// 		Exec(context.Background())
+// 	return err
+// }

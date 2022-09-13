@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"main/kiteconnectsimulator/models"
 	"math"
 	"net/url"
 	"sync"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	kiteconnect "github.com/zerodha/gokiteconnect/v4"
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
 // Mode represents available ticker modes.
@@ -138,10 +138,9 @@ var (
 )
 
 // New creates a new ticker instance.
-func New(apiKey string, accessToken string) *Ticker {
+func New(apiKey string) *Ticker {
 	ticker := &Ticker{
 		apiKey:              apiKey,
-		accessToken:         accessToken,
 		url:                 tickerURL,
 		autoReconnect:       true,
 		reconnectMaxDelay:   defaultReconnectMaxDelay,
@@ -757,4 +756,3 @@ func convertPrice(seg uint32, val float64) float64 {
 		return val / 100.0
 	}
 }
-
