@@ -2,7 +2,6 @@ package kiteconnectsimulator
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/google/go-querystring/query"
-	"github.com/uptrace/bun"
 	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
@@ -157,6 +155,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		InstrumentToken: uint32(quoteLTP[instrument].InstrumentToken),
 		TransactionType: orderParams.TransactionType,
 		OrderType:       orderParams.OrderType,
+		Status:          OrderStatusOpen,
 	}}
 
 	if orderParams.OrderType == OrderTypeLimit {
@@ -165,24 +164,22 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		order.Status = OrderStatusComplete
 	}
 
-	err = db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		_, err = tx.NewInsert().Model(order).Returning("id").Exec(ctx)
-		update_holding(tx, order)
-
-		if order.OrderType == OrderTypeLimit {
-			if order.TransactionType == TransactionTypeBuy {
-				c.Om.AddBuy(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
-			} else if order.TransactionType == TransactionTypeSell {
-				c.Om.AddSell(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
-			} else {
-				panic("Unknown transactiontype")
-			}
-		}
-		return err
-	})
+	_, err = db.NewInsert().Model(order).Exec(context.Background())
 
 	if err != nil {
 		panic(err)
+	}
+
+	if order.OrderType == OrderTypeMarket {
+		complete_order_and_update_holding(order.ID)
+	} else if order.OrderType == OrderTypeLimit {
+		if order.TransactionType == TransactionTypeBuy {
+			c.Om.AddBuy(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+		} else if order.TransactionType == TransactionTypeSell {
+			c.Om.AddSell(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+		} else {
+			panic("Unknown transactiontype")
+		}
 	}
 
 	return OrderResponse{strconv.FormatInt(order.ID, 10)}, err

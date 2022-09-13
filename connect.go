@@ -151,11 +151,15 @@ const (
 
 // New creates a new Kite Connect client.
 func New(apiKey string) *Client {
+	connect_db()
+	create_tables()
+
 	client := &Client{
 		apiKey:  apiKey,
 		baseURI: baseURI,
 		Om: &ordermatcher.OrderMatcher{
 			Ticker: kiteticker.New(apiKey),
+			Db:     db,
 		},
 	}
 
@@ -163,9 +167,6 @@ func New(apiKey string) *Client {
 	client.SetHTTPClient(&http.Client{
 		Timeout: requestTimeout,
 	})
-
-	connect_db()
-	create_tables()
 
 	return client
 }

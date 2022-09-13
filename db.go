@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
@@ -55,9 +56,16 @@ func create_tables() {
 	fmt.Println("Tables created")
 }
 
-func update_holding(tx bun.Tx, order *DbOrder) {
+func complete_order_and_update_holding(orderPK int64) {
+	order := new(DbOrder)
+	err := db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
+
+	if err != nil {
+		log.Fatal("Error in selecting order from db_order: ", err)
+	}
+
 	holding := new(DbHolding)
-	count, err := tx.NewSelect().
+	count, err := db.NewSelect().
 		Model(holding).
 		Where("exchange = ?", order.Exchange).
 		Where("tradingsymbol = ?", order.TradingSymbol).
@@ -67,65 +75,81 @@ func update_holding(tx bun.Tx, order *DbOrder) {
 		panic(err)
 	}
 
-	if count == 0 {
+	err = db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 
-		holding := &DbHolding{Holding: Holding{
-			Tradingsymbol:   order.TradingSymbol,
-			Exchange:        order.Exchange,
-			InstrumentToken: order.InstrumentToken,
-			Quantity:        int(order.Quantity),
-			Price:           order.Price,
-		}}
+		_, err := tx.NewUpdate().Model(order).Set("status = ?", OrderStatusComplete).Where("id = ?", orderPK).Exec(ctx)
 
-		res, err := tx.NewInsert().
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if count == 0 {
+
+			holding := &DbHolding{Holding: Holding{
+				Tradingsymbol:   order.TradingSymbol,
+				Exchange:        order.Exchange,
+				InstrumentToken: order.InstrumentToken,
+				Quantity:        int(order.Quantity),
+				Price:           order.Price,
+			}}
+
+			res, err := db.NewInsert().
+				Model(holding).
+				Exec(context.Background())
+
+			if err != nil {
+				panic(err)
+			}
+
+			count, err := res.RowsAffected()
+
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Printf("New holdings inserted %d", count)
+
+		}
+
+		if order.TransactionType == "BUY" {
+
+			newTotalQuantity := holding.Quantity + int(order.Quantity)
+			newTotalPrice := float64(holding.Quantity)*holding.Price + order.Quantity*order.Price
+
+			holding.Quantity = newTotalQuantity
+			holding.Price = newTotalPrice / float64(newTotalQuantity)
+		} else if order.TransactionType == "SELL" {
+
+			newTotalQuantity := holding.Quantity - int(order.Quantity)
+			newTotalPrice := float64(holding.Quantity)*holding.Price - order.Quantity*order.Price
+
+			holding.Quantity = newTotalQuantity
+			holding.Price = newTotalPrice / float64(newTotalQuantity)
+		}
+
+		res, err := tx.NewUpdate().
 			Model(holding).
+			Where("exchange = ?", holding.Exchange).
+			Where("tradingsymbol = ?", holding.Tradingsymbol).
 			Exec(context.Background())
 
 		if err != nil {
 			panic(err)
 		}
 
-		count, err := res.RowsAffected()
+		updatedRows, err := res.RowsAffected()
 
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Printf("New holdings inserted %d", count)
+		fmt.Printf("Holdings updated %d", updatedRows)
 
-	}
-
-	if order.TransactionType == "BUY" {
-
-		newTotalQuantity := holding.Quantity + int(order.Quantity)
-		newTotalPrice := float64(holding.Quantity)*holding.Price + order.Quantity*order.Price
-
-		holding.Quantity = newTotalQuantity
-		holding.Price = newTotalPrice / float64(newTotalQuantity)
-	} else if order.TransactionType == "SELL" {
-
-		newTotalQuantity := holding.Quantity - int(order.Quantity)
-		newTotalPrice := float64(holding.Quantity)*holding.Price - order.Quantity*order.Price
-
-		holding.Quantity = newTotalQuantity
-		holding.Price = newTotalPrice / float64(newTotalQuantity)
-	}
-
-	res, err := tx.NewUpdate().
-		Model(holding).
-		Where("exchange = ?", holding.Exchange).
-		Where("tradingsymbol = ?", holding.Tradingsymbol).
-		Exec(context.Background())
+		return err
+	})
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	updatedRows, err := res.RowsAffected()
-
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Holdings updated %d", updatedRows)
 }

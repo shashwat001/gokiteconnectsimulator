@@ -27,6 +27,7 @@ func onConnect() {
 // Triggered when tick is recevived
 func onTick(tick models.Tick) {
 	fmt.Println("Tick: ", tick)
+	handleTick(tick)
 }
 
 // Triggered when reconnection is attempted which is enabled by default
