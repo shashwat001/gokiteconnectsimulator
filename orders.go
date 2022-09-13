@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"main/kiteconnectsimulator/db"
 	"main/kiteconnectsimulator/models"
 
 	"github.com/google/go-querystring/query"
@@ -111,7 +112,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		log.Fatal("Error in getting quote for instrument: ", err)
 	}
 
-	order := &DbOrder{Order: models.Order{
+	order := &db.DbOrder{Order: models.Order{
 		Exchange:        orderParams.Exchange,
 		TradingSymbol:   orderParams.Tradingsymbol,
 		Quantity:        float64(orderParams.Quantity),
@@ -128,19 +129,19 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		order.Status = OrderStatusComplete
 	}
 
-	_, err = db.NewInsert().Model(order).Exec(context.Background())
+	_, err = c.dbClient.Db.NewInsert().Model(order).Exec(context.Background())
 
 	if err != nil {
 		panic(err)
 	}
 
 	if order.OrderType == OrderTypeMarket {
-		complete_order_and_update_holding(order.ID)
+		c.dbClient.Complete_order_and_update_holding(order.ID)
 	} else if order.OrderType == OrderTypeLimit {
 		if order.TransactionType == TransactionTypeBuy {
-			c.Om.AddBuy(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+			c.Om.AddBuy(order.ID, order.InstrumentToken, int64(order.Quantity), order.Price)
 		} else if order.TransactionType == TransactionTypeSell {
-			c.Om.AddSell(instrument, order.InstrumentToken, int64(order.Quantity), order.Price)
+			c.Om.AddSell(order.ID, order.InstrumentToken, int64(order.Quantity), order.Price)
 		} else {
 			panic("Unknown transactiontype")
 		}

@@ -24,12 +24,6 @@ func onConnect() {
 	fmt.Println("Connected")
 }
 
-// Triggered when tick is recevived
-func onTick(tick models.Tick) {
-	fmt.Println("Tick: ", tick)
-	handleTick(tick)
-}
-
 // Triggered when reconnection is attempted which is enabled by default
 func onReconnect(attempt int, delay time.Duration) {
 	fmt.Printf("Reconnect attempt %d in %fs\n", attempt, delay.Seconds())
@@ -40,14 +34,14 @@ func onNoReconnect(attempt int) {
 	fmt.Printf("Maximum no of reconnect attempt reached: %d", attempt)
 }
 
-func Runticker(ticker *kiteticker.Ticker) {
+func Runticker(ticker *kiteticker.Ticker, f func(tick models.Tick)) {
 	// Assign callbacks
 	ticker.OnError(onError)
 	ticker.OnClose(onClose)
 	ticker.OnConnect(onConnect)
 	ticker.OnReconnect(onReconnect)
 	ticker.OnNoReconnect(onNoReconnect)
-	ticker.OnTick(onTick)
+	ticker.OnTick(f)
 
 	// Start the connection
 	ticker.Serve()

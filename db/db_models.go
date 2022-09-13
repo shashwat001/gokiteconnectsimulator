@@ -1,4 +1,4 @@
-package kiteconnectsimulator
+package db
 
 import (
 	"main/kiteconnectsimulator/models"

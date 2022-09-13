@@ -3,6 +3,7 @@ package kiteconnectsimulator
 import (
 	"context"
 	"fmt"
+	"main/kiteconnectsimulator/db"
 	"main/kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
@@ -81,9 +82,9 @@ type ConvertPositionParams struct {
 
 // GetHoldings gets a list of holdings.
 func (c *Client) GetHoldings() (Holdings, error) {
-	var holdings []DbHolding
+	var holdings []db.DbHolding
 	var returnHolding Holdings
-	err := db.NewSelect().Model(&holdings).Scan(context.Background())
+	err := c.dbClient.Db.NewSelect().Model(&holdings).Scan(context.Background())
 
 	if err != nil {
 		panic(err)

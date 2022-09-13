@@ -4,10 +4,9 @@ import (
 	"container/heap"
 	"fmt"
 	"log"
+	"main/kiteconnectsimulator/db"
 	"main/kiteconnectsimulator/models"
 	kiteticker "main/kiteconnectsimulator/ticker"
-
-	"github.com/uptrace/bun"
 )
 
 var (
@@ -21,7 +20,7 @@ var (
 
 type OrderMatcher struct {
 	Ticker *kiteticker.Ticker
-	Db     *bun.DB
+	Db     *db.DbClient
 }
 
 func (om *OrderMatcher) Start() {
@@ -30,11 +29,11 @@ func (om *OrderMatcher) Start() {
 	subscribedInstruments = make(map[uint32]bool)
 
 	log.Println("Starting listening to ticker")
-	Runticker(om.Ticker)
+	Runticker(om.Ticker, om.handleTick)
 
 }
 
-func (om *OrderMatcher) AddBuy(orderid string, instrumentToken uint32, qty int64, amount float64) {
+func (om *OrderMatcher) AddBuy(orderid int64, instrumentToken uint32, qty int64, amount float64) {
 	log.Println("Adding buy order to limit queue for instrument: ", instrumentToken)
 	ord := &order{
 		orderid:         orderid,
@@ -59,7 +58,7 @@ func (om *OrderMatcher) AddBuy(orderid string, instrumentToken uint32, qty int64
 	}
 }
 
-func (om *OrderMatcher) AddSell(orderid string, instrumentToken uint32, qty int64, amount float64) {
+func (om *OrderMatcher) AddSell(orderid int64, instrumentToken uint32, qty int64, amount float64) {
 	log.Println("Adding sell order to limit queue for instrument: ", instrumentToken)
 	ord := &order{
 		orderid:         orderid,
@@ -84,11 +83,55 @@ func (om *OrderMatcher) AddSell(orderid string, instrumentToken uint32, qty int6
 	}
 }
 
-func handleTick(tick models.Tick) {
-	if queue, ok := buyOrderQueues[tick.InstrumentToken]; ok {
-		order := queue.Top()
-		if tick.LastPrice-order.price > BUY_OFFSET {
-			// Complete_order_and_update_holding(order.orderid)
+func (om *OrderMatcher) handleTick(tick models.Tick) {
+	log.Println(tick)
+
+	hasBuy := false
+	hasSell := false
+
+	if buyqueue, ok := buyOrderQueues[tick.InstrumentToken]; ok {
+		for buyqueue.Len() > 0 {
+			order := buyqueue.Top()
+			if tick.LastPrice-order.price > BUY_OFFSET {
+				buyqueue.Pop()
+				om.Db.Complete_order_and_update_holding(order.orderid)
+			} else {
+				break
+			}
+		}
+
+		if buyqueue.Len() > 0 {
+			hasBuy = true
+		} else {
+			delete(buyOrderQueues, tick.InstrumentToken)
 		}
 	}
+
+	if sellqueue, ok := sellOrderQueues[tick.InstrumentToken]; ok {
+		for sellqueue.Len() > 0 {
+			order := sellqueue.Top()
+			if order.price-tick.LastPrice > SELL_OFFSET {
+				sellqueue.Pop()
+				om.Db.Complete_order_and_update_holding(order.orderid)
+			} else {
+				break
+			}
+		}
+		if sellqueue.Len() > 0 {
+			hasSell = true
+		} else {
+			delete(sellOrderQueues, tick.InstrumentToken)
+		}
+	}
+
+	if !(hasBuy || hasSell) {
+		if _, ok := subscribedInstruments[tick.InstrumentToken]; ok {
+			log.Println("Unsubscribing to ticker for instrument: ", tick.InstrumentToken)
+			om.Ticker.Unsubscribe([]uint32{tick.InstrumentToken})
+			delete(subscribedInstruments, tick.InstrumentToken)
+		} else {
+			log.Fatal("Tick received for unsubscribed token: ", tick.InstrumentToken)
+		}
+	}
+
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type order struct {
-	orderid         string
+	orderid         int64
 	quantity        int64
 	price           float64
 	transactionType string
@@ -45,7 +45,7 @@ func (pq *PriorityQueue) Pop() any {
 }
 
 func (pq PriorityQueue) Top() *order {
-	return pq[len(pq)-1]
+	return pq[0]
 }
 
 func (pq *PriorityQueue) List() {

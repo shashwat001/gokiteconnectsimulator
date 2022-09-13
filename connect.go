@@ -2,6 +2,7 @@ package kiteconnectsimulator
 
 import (
 	"fmt"
+	"main/kiteconnectsimulator/db"
 	"main/kiteconnectsimulator/ordermatcher"
 	kiteticker "main/kiteconnectsimulator/ticker"
 	"net/http"
@@ -24,6 +25,7 @@ type Client struct {
 	baseURI     string
 	httpClient  HTTPClient
 	Om          *ordermatcher.OrderMatcher
+	dbClient    *db.DbClient
 }
 
 const (
@@ -151,15 +153,17 @@ const (
 
 // New creates a new Kite Connect client.
 func New(apiKey string) *Client {
-	connect_db()
-	create_tables()
+	dbclient := new(db.DbClient)
+	dbclient.Connect_db()
+	dbclient.Create_tables()
 
 	client := &Client{
-		apiKey:  apiKey,
-		baseURI: baseURI,
+		apiKey:   apiKey,
+		baseURI:  baseURI,
+		dbClient: dbclient,
 		Om: &ordermatcher.OrderMatcher{
 			Ticker: kiteticker.New(apiKey),
-			Db:     db,
+			Db:     dbclient,
 		},
 	}
 

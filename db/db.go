@@ -1,4 +1,4 @@
-package kiteconnectsimulator
+package db
 
 import (
 	"context"
@@ -14,11 +14,13 @@ import (
 	"github.com/uptrace/bun/driver/pgdriver"
 )
 
-var db *bun.DB
+type DbClient struct {
+	Db *bun.DB
+}
 
-func connect_db() {
+func (dbClient *DbClient) Connect_db() {
 
-	connect_pgx()
+	dbClient.connect_pgx()
 	// db.AddQueryHook(bundebug.NewQueryHook(
 	// 	bundebug.WithVerbose(true),
 	// 	bundebug.FromEnv("BUNDEBUG"),
@@ -26,7 +28,7 @@ func connect_db() {
 
 }
 
-func connect_pgx() {
+func (dbClient *DbClient) connect_pgx() {
 	config, err := pgx.ParseConfig("postgres://postgres:@localhost:5432/simulator?sslmode=disable")
 	if err != nil {
 		panic(err)
@@ -34,39 +36,39 @@ func connect_pgx() {
 	config.PreferSimpleProtocol = true
 
 	sqldb := stdlib.OpenDB(*config)
-	db = bun.NewDB(sqldb, pgdialect.New())
+	dbClient.Db = bun.NewDB(sqldb, pgdialect.New())
 }
 
-func connect_inbuilt() {
+func (dbClient *DbClient) connect_inbuilt() {
 	dsn := "postgres://postgres:@localhost:5432/simulator?sslmode=disable"
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 
-	db = bun.NewDB(sqldb, pgdialect.New())
+	dbClient.Db = bun.NewDB(sqldb, pgdialect.New())
 }
 
-func create_tables() {
-	if db == nil {
+func (dbClient *DbClient) Create_tables() {
+	if dbClient.Db == nil {
 		panic("Database not initialized")
 	}
 
-	db.ResetModel(context.Background())
+	dbClient.Db.ResetModel(context.Background())
 
-	db.NewCreateTable().Model((*DbOrder)(nil)).IfNotExists().Exec(context.Background())
-	db.NewCreateTable().Model((*DbHolding)(nil)).IfNotExists().Exec(context.Background())
+	dbClient.Db.NewCreateTable().Model((*DbOrder)(nil)).IfNotExists().Exec(context.Background())
+	dbClient.Db.NewCreateTable().Model((*DbHolding)(nil)).IfNotExists().Exec(context.Background())
 
 	fmt.Println("Tables created")
 }
 
-func complete_order_and_update_holding(orderPK int64) {
+func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) {
 	order := new(DbOrder)
-	err := db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
+	err := dbClient.Db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
 
 	if err != nil {
 		log.Fatal("Error in selecting order from db_order: ", err)
 	}
 
 	holding := new(DbHolding)
-	count, err := db.NewSelect().
+	count, err := dbClient.Db.NewSelect().
 		Model(holding).
 		Where("exchange = ?", order.Exchange).
 		Where("tradingsymbol = ?", order.TradingSymbol).
@@ -76,9 +78,9 @@ func complete_order_and_update_holding(orderPK int64) {
 		panic(err)
 	}
 
-	err = db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+	err = dbClient.Db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 
-		_, err := tx.NewUpdate().Model(order).Set("status = ?", OrderStatusComplete).Where("id = ?", orderPK).Exec(ctx)
+		_, err := tx.NewUpdate().Model(order).Set("status = ?", "COMPLETE").Where("id = ?", orderPK).Exec(ctx)
 
 		if err != nil {
 			log.Fatal(err)
@@ -94,7 +96,7 @@ func complete_order_and_update_holding(orderPK int64) {
 				Price:           order.Price,
 			}}
 
-			res, err := db.NewInsert().
+			res, err := tx.NewInsert().
 				Model(holding).
 				Exec(context.Background())
 
