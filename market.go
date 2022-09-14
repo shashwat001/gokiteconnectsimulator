@@ -2,13 +2,13 @@ package kiteconnectsimulator
 
 import (
 	"fmt"
+	"kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/gocarina/gocsv"
 	"github.com/google/go-querystring/query"
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
 type quoteParams struct {

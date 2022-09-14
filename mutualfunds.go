@@ -2,11 +2,11 @@ package kiteconnectsimulator
 
 import (
 	"fmt"
+	"kiteconnectsimulator/models"
 	"net/http"
 	"net/url"
 
 	"github.com/google/go-querystring/query"
-	"github.com/zerodha/gokiteconnect/v4/models"
 )
 
 // MFHolding represents a individual mutualfund holding.

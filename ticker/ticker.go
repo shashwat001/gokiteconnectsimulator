@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	kiteconnect "github.com/zerodha/gokiteconnect/v4"
 )
 
 // Mode represents available ticker modes.
@@ -50,7 +49,7 @@ type callbacks struct {
 	onConnect     func()
 	onClose       func(int, string)
 	onError       func(error)
-	onOrderUpdate func(kiteconnect.Order)
+	onOrderUpdate func(models.Order)
 }
 
 type tickerInput struct {
@@ -224,7 +223,7 @@ func (t *Ticker) OnTick(f func(tick models.Tick)) {
 }
 
 // OnOrderUpdate callback.
-func (t *Ticker) OnOrderUpdate(f func(order kiteconnect.Order)) {
+func (t *Ticker) OnOrderUpdate(f func(order models.Order)) {
 	t.callbacks.onOrderUpdate = f
 }
 
@@ -382,7 +381,7 @@ func (t *Ticker) triggerTick(tick models.Tick) {
 	}
 }
 
-func (t *Ticker) triggerOrderUpdate(order kiteconnect.Order) {
+func (t *Ticker) triggerOrderUpdate(order models.Order) {
 	if t.callbacks.onOrderUpdate != nil {
 		t.callbacks.onOrderUpdate(order)
 	}
@@ -583,7 +582,7 @@ func (t *Ticker) processTextMessage(inp []byte) {
 	} else if msg.Type == messageOrder {
 		// Parse order update data
 		order := struct {
-			Data kiteconnect.Order `json:"data"`
+			Data models.Order `json:"data"`
 		}{}
 
 		if err := json.Unmarshal(inp, &order); err != nil {
