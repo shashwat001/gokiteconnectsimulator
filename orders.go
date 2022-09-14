@@ -14,6 +14,10 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
+type Order struct {
+	models.Order
+}
+
 // Orders is a list of orders.
 type Orders []models.Order
 
@@ -116,7 +120,6 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		Exchange:        orderParams.Exchange,
 		TradingSymbol:   orderParams.Tradingsymbol,
 		Quantity:        float64(orderParams.Quantity),
-		Price:           quoteLTP[instrument].LastPrice,
 		InstrumentToken: uint32(quoteLTP[instrument].InstrumentToken),
 		TransactionType: orderParams.TransactionType,
 		OrderType:       orderParams.OrderType,
@@ -125,8 +128,11 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 
 	if orderParams.OrderType == OrderTypeLimit {
 		order.Status = OrderStatusOpen
+		order.Price = orderParams.Price
+
 	} else {
 		order.Status = OrderStatusComplete
+		order.Price = quoteLTP[instrument].LastPrice
 	}
 
 	_, err = c.dbClient.Db.NewInsert().Model(order).Exec(context.Background())

@@ -138,9 +138,10 @@ var (
 )
 
 // New creates a new ticker instance.
-func New(apiKey string) *Ticker {
+func New(apiKey string, accessToken string) *Ticker {
 	ticker := &Ticker{
 		apiKey:              apiKey,
+		accessToken:         accessToken,
 		url:                 tickerURL,
 		autoReconnect:       true,
 		reconnectMaxDelay:   defaultReconnectMaxDelay,

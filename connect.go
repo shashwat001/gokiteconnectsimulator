@@ -162,8 +162,7 @@ func New(apiKey string) *Client {
 		baseURI:  baseURI,
 		dbClient: dbclient,
 		Om: &ordermatcher.OrderMatcher{
-			Ticker: kiteticker.New(apiKey),
-			Db:     dbclient,
+			Db: dbclient,
 		},
 	}
 
@@ -201,7 +200,7 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 // SetAccessToken sets the access token to the Kite Connect instance.
 func (c *Client) SetAccessToken(accessToken string) {
 	c.accessToken = accessToken
-	c.Om.Ticker.SetAccessToken(accessToken)
+	c.Om.Ticker = kiteticker.New(c.apiKey, accessToken)
 }
 
 // GetLoginURL gets Kite Connect login endpoint.

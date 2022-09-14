@@ -92,7 +92,10 @@ func (om *OrderMatcher) handleTick(tick models.Tick) {
 	if buyqueue, ok := buyOrderQueues[tick.InstrumentToken]; ok {
 		for buyqueue.Len() > 0 {
 			order := buyqueue.Top()
-			if tick.LastPrice-order.price > BUY_OFFSET {
+			log.Println("Order price: ", order.price)
+			log.Println("Tick price: ", tick.LastPrice)
+			if order.price-tick.LastPrice > BUY_OFFSET {
+				log.Println("Buy order complete")
 				buyqueue.Pop()
 				om.Db.Complete_order_and_update_holding(order.orderid)
 			} else {
@@ -110,7 +113,8 @@ func (om *OrderMatcher) handleTick(tick models.Tick) {
 	if sellqueue, ok := sellOrderQueues[tick.InstrumentToken]; ok {
 		for sellqueue.Len() > 0 {
 			order := sellqueue.Top()
-			if order.price-tick.LastPrice > SELL_OFFSET {
+			if tick.LastPrice-order.price > SELL_OFFSET {
+				log.Println("Sell order complete")
 				sellqueue.Pop()
 				om.Db.Complete_order_and_update_holding(order.orderid)
 			} else {
