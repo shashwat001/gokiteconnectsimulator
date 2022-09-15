@@ -59,12 +59,20 @@ func (dbClient *DbClient) Create_tables() {
 	fmt.Println("Tables created")
 }
 
-func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) {
+func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) *DbOrder {
 	order := new(DbOrder)
 	err := dbClient.Db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
 
+	if err != nil && err == sql.ErrNoRows {
+		panic("No order found for an order in buy/sell queue")
+	}
+
 	if err != nil {
-		log.Fatal("Error in selecting order from db_order: ", err)
+		panic(err)
+	}
+
+	if order.Status != "OPEN" {
+		panic(fmt.Sprintf("Order is buy queue is not OPEN but: %s", order.Status))
 	}
 
 	holding := new(DbHolding)
@@ -140,19 +148,21 @@ func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) {
 			panic(err)
 		}
 
-		updatedRows, err := res.RowsAffected()
+		_, err = res.RowsAffected()
 
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Printf("Holdings updated %d", updatedRows)
-
 		return err
 	})
+
+	err = dbClient.Db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
 
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	return order
 
 }

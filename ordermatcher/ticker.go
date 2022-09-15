@@ -2,8 +2,6 @@ package ordermatcher
 
 import (
 	"fmt"
-	"kiteconnectsimulator/models"
-	kiteticker "kiteconnectsimulator/ticker"
 	"os"
 	"strconv"
 	"time"
@@ -34,17 +32,17 @@ func onNoReconnect(attempt int) {
 	fmt.Printf("Maximum no of reconnect attempt reached: %d", attempt)
 }
 
-func Runticker(ticker *kiteticker.Ticker, f func(tick models.Tick)) {
+func Runticker(om *OrderMatcher) {
 	// Assign callbacks
-	ticker.OnError(onError)
-	ticker.OnClose(onClose)
-	ticker.OnConnect(onConnect)
-	ticker.OnReconnect(onReconnect)
-	ticker.OnNoReconnect(onNoReconnect)
-	ticker.OnTick(f)
+	om.Ticker.OnError(onError)
+	om.Ticker.OnClose(onClose)
+	om.Ticker.OnConnect(om.onConnect)
+	om.Ticker.OnReconnect(onReconnect)
+	om.Ticker.OnNoReconnect(onNoReconnect)
+	om.Ticker.OnTick(om.handleTick)
 
 	// Start the connection
-	ticker.Serve()
+	om.Ticker.Serve()
 }
 
 // getEnv returns the value of the environment variable provided.

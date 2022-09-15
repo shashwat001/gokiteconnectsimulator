@@ -200,7 +200,7 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 // SetAccessToken sets the access token to the Kite Connect instance.
 func (c *Client) SetAccessToken(accessToken string) {
 	c.accessToken = accessToken
-	c.Om.Ticker = kiteticker.New(c.apiKey, accessToken)
+	c.Om.Ticker = kiteticker.NewMainTicker(c.apiKey, accessToken)
 }
 
 // GetLoginURL gets Kite Connect login endpoint.
@@ -264,4 +264,12 @@ func (c *Client) doRaw(method, uri string, reqBody []byte, headers http.Header) 
 	}
 
 	return c.httpClient.DoRaw(method, c.baseURI+uri, reqBody, headers)
+}
+
+func (c *Client) SetTicker(ticker *kiteticker.Ticker) {
+	c.Om.CallbacksTicker = ticker
+}
+
+func (c *Client) StartSimulator() {
+	c.Om.Start()
 }

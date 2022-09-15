@@ -19,17 +19,19 @@ var (
 )
 
 type OrderMatcher struct {
-	Ticker *kiteticker.Ticker
-	Db     *db.DbClient
+	Ticker          *kiteticker.MainTicker
+	CallbacksTicker *kiteticker.Ticker
+	Db              *db.DbClient
 }
 
 func (om *OrderMatcher) Start() {
 	buyOrderQueues = make(map[uint32]*PriorityQueue)
 	sellOrderQueues = make(map[uint32]*PriorityQueue)
 	subscribedInstruments = make(map[uint32]bool)
+	om.CallbacksTicker.OnSubscribe(om.onSubscribe)
 
 	log.Println("Starting listening to ticker")
-	Runticker(om.Ticker, om.handleTick)
+	Runticker(om)
 
 }
 
@@ -84,7 +86,8 @@ func (om *OrderMatcher) AddSell(orderid int64, instrumentToken uint32, qty int64
 }
 
 func (om *OrderMatcher) handleTick(tick models.Tick) {
-	log.Println(tick)
+	// log.Println(tick)
+	go om.CallbacksTicker.TriggerTick(tick)
 
 	hasBuy := false
 	hasSell := false
@@ -92,12 +95,13 @@ func (om *OrderMatcher) handleTick(tick models.Tick) {
 	if buyqueue, ok := buyOrderQueues[tick.InstrumentToken]; ok {
 		for buyqueue.Len() > 0 {
 			order := buyqueue.Top()
-			log.Println("Order price: ", order.price)
-			log.Println("Tick price: ", tick.LastPrice)
+			// log.Println("Order price: ", order.price)
+			// log.Println("Tick price: ", tick.LastPrice)
 			if order.price-tick.LastPrice > BUY_OFFSET {
 				log.Println("Buy order complete")
 				buyqueue.Pop()
-				om.Db.Complete_order_and_update_holding(order.orderid)
+				dbOrder := om.Db.Complete_order_and_update_holding(order.orderid)
+				om.CallbacksTicker.TriggerOrderUpdate(dbOrder.Order)
 			} else {
 				break
 			}
@@ -116,7 +120,8 @@ func (om *OrderMatcher) handleTick(tick models.Tick) {
 			if tick.LastPrice-order.price > SELL_OFFSET {
 				log.Println("Sell order complete")
 				sellqueue.Pop()
-				om.Db.Complete_order_and_update_holding(order.orderid)
+				dbOrder := om.Db.Complete_order_and_update_holding(order.orderid)
+				om.CallbacksTicker.TriggerOrderUpdate(dbOrder.Order)
 			} else {
 				break
 			}
@@ -130,12 +135,20 @@ func (om *OrderMatcher) handleTick(tick models.Tick) {
 
 	if !(hasBuy || hasSell) {
 		if _, ok := subscribedInstruments[tick.InstrumentToken]; ok {
-			log.Println("Unsubscribing to ticker for instrument: ", tick.InstrumentToken)
-			om.Ticker.Unsubscribe([]uint32{tick.InstrumentToken})
-			delete(subscribedInstruments, tick.InstrumentToken)
+			// log.Println("Unsubscribing to ticker for instrument: ", tick.InstrumentToken)
+			// om.Ticker.Unsubscribe([]uint32{tick.InstrumentToken})
+			// delete(subscribedInstruments, tick.InstrumentToken)
 		} else {
-			log.Fatal("Tick received for unsubscribed token: ", tick.InstrumentToken)
+			// log.Fatal("Tick received for unsubscribed token: ", tick.InstrumentToken)
 		}
 	}
 
+}
+
+func (om *OrderMatcher) onConnect() {
+	om.CallbacksTicker.TriggerConnect()
+}
+
+func (om *OrderMatcher) onSubscribe(token []uint32) error {
+	return om.Ticker.Subscribe(token)
 }

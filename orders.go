@@ -116,6 +116,10 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 		log.Fatal("Error in getting quote for instrument: ", err)
 	}
 
+	if quoteLTP[instrument].InstrumentToken == 0 {
+		panic("Instrument does not exist")
+	}
+
 	order := &db.DbOrder{Order: models.Order{
 		Exchange:        orderParams.Exchange,
 		TradingSymbol:   orderParams.Tradingsymbol,
@@ -143,6 +147,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 
 	if order.OrderType == OrderTypeMarket {
 		c.dbClient.Complete_order_and_update_holding(order.ID)
+		c.Om.CallbacksTicker.TriggerOrderUpdate(order.Order)
 	} else if order.OrderType == OrderTypeLimit {
 		if order.TransactionType == TransactionTypeBuy {
 			c.Om.AddBuy(order.ID, order.InstrumentToken, int64(order.Quantity), order.Price)
