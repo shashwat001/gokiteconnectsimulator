@@ -144,6 +144,7 @@ type GTTResponse struct {
 
 // PlaceGTT constructs and places a GTT order using GTTParams.
 func (c *Client) PlaceGTT(o GTTParams) (GTTResponse, error) {
+	panic("Action not supported.")
 	var (
 		params    = url.Values{}
 		gtt       = newGTT(o)
@@ -170,6 +171,7 @@ func (c *Client) PlaceGTT(o GTTParams) (GTTResponse, error) {
 
 // ModifyGTT modifies the condition or orders inside an already created GTT order.
 func (c *Client) ModifyGTT(triggerID int, o GTTParams) (GTTResponse, error) {
+	panic("Action not supported.")
 	var (
 		params    = url.Values{}
 		gtt       = newGTT(o)

@@ -173,6 +173,7 @@ func (c *Client) GetMFOrdersByDate(fromDate, toDate string) (MFOrders, error) {
 
 // PlaceMFOrder places an mutualfund order.
 func (c *Client) PlaceMFOrder(orderParams MFOrderParams) (MFOrderResponse, error) {
+	panic("Action not supported.")
 	var (
 		orderResponse MFOrderResponse
 		params        url.Values

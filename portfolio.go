@@ -105,6 +105,7 @@ func (c *Client) GetPositions() (Positions, error) {
 
 // ConvertPosition converts postion's product type.
 func (c *Client) ConvertPosition(positionParams ConvertPositionParams) (bool, error) {
+	panic("Action not supported.")
 	var (
 		b      bool
 		err    error

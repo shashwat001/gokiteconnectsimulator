@@ -163,6 +163,7 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 
 // ModifyOrder modifies an order.
 func (c *Client) ModifyOrder(variety string, orderID string, orderParams OrderParams) (OrderResponse, error) {
+	panic("Action not supported.")
 	var (
 		orderResponse OrderResponse
 		params        url.Values
@@ -179,6 +180,7 @@ func (c *Client) ModifyOrder(variety string, orderID string, orderParams OrderPa
 
 // CancelOrder cancels/exits an order.
 func (c *Client) CancelOrder(variety string, orderID string, parentOrderID *string) (OrderResponse, error) {
+	panic("Action not supported.")
 	var (
 		orderResponse OrderResponse
 		params        url.Values
