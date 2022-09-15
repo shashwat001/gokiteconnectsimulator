@@ -146,19 +146,19 @@ func (c *Client) PlaceOrder(variety string, orderParams OrderParams) (OrderRespo
 	}
 
 	if order.OrderType == OrderTypeMarket {
-		c.dbClient.Complete_order_and_update_holding(order.ID)
+		c.dbClient.Complete_order_and_update_holding(order.OrderID)
 		c.Om.CallbacksTicker.TriggerOrderUpdate(order.Order)
 	} else if order.OrderType == OrderTypeLimit {
 		if order.TransactionType == TransactionTypeBuy {
-			c.Om.AddBuy(order.ID, order.InstrumentToken, int64(order.Quantity), order.Price)
+			c.Om.AddBuy(order.OrderID, order.InstrumentToken, int64(order.Quantity), order.Price)
 		} else if order.TransactionType == TransactionTypeSell {
-			c.Om.AddSell(order.ID, order.InstrumentToken, int64(order.Quantity), order.Price)
+			c.Om.AddSell(order.OrderID, order.InstrumentToken, int64(order.Quantity), order.Price)
 		} else {
 			panic("Unknown transactiontype")
 		}
 	}
 
-	return OrderResponse{strconv.FormatInt(order.ID, 10)}, err
+	return OrderResponse{strconv.FormatInt(order.OrderID, 10)}, err
 }
 
 // ModifyOrder modifies an order.

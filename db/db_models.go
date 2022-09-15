@@ -7,7 +7,7 @@ import (
 
 type DbOrder struct {
 	models.Order
-	ID        int64     `bun:",pk,autoincrement"`
+	OrderID   int64     `bun:",pk,autoincrement"`
 	CreatedAt time.Time `bun:",nullzero,default:now()"`
 }
 
