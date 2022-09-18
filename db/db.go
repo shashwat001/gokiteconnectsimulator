@@ -29,7 +29,7 @@ func (dbClient *DbClient) Connect_db() {
 }
 
 func (dbClient *DbClient) connect_pgx() {
-	config, err := pgx.ParseConfig("postgres://postgres:@localhost:5432/simulator?sslmode=disable")
+	config, err := pgx.ParseConfig("postgres://postgres:@localhost:5432/zerodha?sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +40,7 @@ func (dbClient *DbClient) connect_pgx() {
 }
 
 func (dbClient *DbClient) connect_inbuilt() {
-	dsn := "postgres://postgres:@localhost:5432/simulator?sslmode=disable"
+	dsn := "postgres://postgres:@localhost:5432/zerodha?sslmode=disable"
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 
 	dbClient.Db = bun.NewDB(sqldb, pgdialect.New())
@@ -59,9 +59,9 @@ func (dbClient *DbClient) Create_tables() {
 	fmt.Println("Tables created")
 }
 
-func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) *DbOrder {
+func (dbClient *DbClient) Complete_order_and_update_holding(orderID int64) *DbOrder {
 	order := new(DbOrder)
-	err := dbClient.Db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
+	err := dbClient.Db.NewSelect().Model(order).Where("order_id = ?", orderID).Scan(context.Background())
 
 	if err != nil && err == sql.ErrNoRows {
 		panic("No order found for an order in buy/sell queue")
@@ -88,7 +88,7 @@ func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) *DbOr
 
 	err = dbClient.Db.RunInTx(context.Background(), &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 
-		_, err := tx.NewUpdate().Model(order).Set("status = ?", "COMPLETE").Where("id = ?", orderPK).Exec(ctx)
+		_, err := tx.NewUpdate().Model(order).Set("status = ?", "COMPLETE").Where("order_id = ?", orderID).Exec(ctx)
 
 		if err != nil {
 			log.Fatal(err)
@@ -157,7 +157,7 @@ func (dbClient *DbClient) Complete_order_and_update_holding(orderPK int64) *DbOr
 		return err
 	})
 
-	err = dbClient.Db.NewSelect().Model(order).Where("id = ?", orderPK).Scan(context.Background())
+	err = dbClient.Db.NewSelect().Model(order).Where("order_id = ?", orderID).Scan(context.Background())
 
 	if err != nil {
 		log.Fatal(err)

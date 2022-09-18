@@ -86,7 +86,7 @@ func (om *OrderMatcher) AddSell(orderid int64, instrumentToken uint32, qty int64
 }
 
 func (om *OrderMatcher) handleTick(tick models.Tick) {
-	// log.Println(tick)
+	log.Println(tick)
 	go om.CallbacksTicker.TriggerTick(tick)
 
 	hasBuy := false
